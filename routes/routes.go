@@ -4,6 +4,7 @@ import (
 	"auth_server/models"
 	"auth_server/utils"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -12,6 +13,7 @@ import (
 func Ping(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "pong",
+		"time":    time.Now,
 	})
 }
 

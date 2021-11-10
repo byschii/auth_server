@@ -7,7 +7,8 @@ import (
 )
 
 type Configuration struct {
-	DbFileName string
+	DbFileName  string
+	ServiceName string
 }
 
 func LoadConfiguration(fileName string) Configuration {
