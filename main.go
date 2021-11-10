@@ -29,14 +29,7 @@ func main() {
 	server := gin.Default()
 	server.GET("/ping", routes.Ping)
 	server.POST("/register", func(c *gin.Context) {
-		var allParams = routes.CheckPostParameters([]string{"username", "password", "email"}, c)
-		if !allParams {
-			c.JSON(http.StatusBadRequest, gin.H{"message": "Missing parameters"})
-		} else {
-			routes.RegisterNewUser(c, db)
-			// send verification email
-			c.JSON(http.StatusCreated, gin.H{"message": "User created"})
-		}
+		c.JSON(routes.RegisterNewUser(c, db))
 	})
 
 	server.POST("/unregister", func(c *gin.Context) {
