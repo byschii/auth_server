@@ -7,8 +7,9 @@ import (
 )
 
 type Configuration struct {
-	DbFileName  string
-	ServiceName string
+	DbFileName    string
+	ServiceName   string
+	Smpt2goApiKey string
 }
 
 func LoadConfiguration(fileName string) Configuration {
