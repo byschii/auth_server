@@ -3,57 +3,61 @@ package main
 import (
 	"auth_server/models"
 	"auth_server/routes"
+	"auth_server/utils"
 	"fmt"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
-func main() {
-	server := gin.Default()
-	server.GET("/ping", routes.Ping)
+const (
+	confFileName = "conf.yml"
+)
 
-	db, err := gorm.Open(sqlite.Open("auth.db"))
+func main() {
+	var conf = utils.LoadConfiguration(confFileName)
+
+	db, err := gorm.Open(sqlite.Open(conf.DbFileName))
 	if err != nil {
 		panic("failed to connect database")
 	} else {
 		fmt.Println("Connected to database")
 	}
 
+	server := gin.Default()
+	server.GET("/ping", routes.Ping)
+	server.POST("/register", func(c *gin.Context) {
+		var allParams = routes.CheckPostParameters([]string{"username", "password", "email"}, c)
+		if !allParams {
+			c.JSON(http.StatusBadRequest, gin.H{"message": "Missing parameters"})
+		} else {
+			routes.RegisterNewUser(c, db)
+			// send verification email
+			c.JSON(http.StatusCreated, gin.H{"message": "User created"})
+		}
+	})
+
+	server.POST("/unregister", func(c *gin.Context) {
+		var allParams = routes.CheckPostParameters([]string{"email", "password"}, c)
+		if !allParams {
+			c.JSON(http.StatusBadRequest, gin.H{"message": "Missing parameters"})
+		} else {
+			if routes.UnregisterUser(c, db) {
+				c.JSON(http.StatusOK, gin.H{"message": "User unregistered"})
+			} else {
+				c.JSON(http.StatusBadRequest, gin.H{"message": "User not found"})
+			}
+		}
+	})
+
 	// Migrate the schema and create the table
 	db.AutoMigrate(&models.User{})
+	db.AutoMigrate(&models.Password{})
 	db.AutoMigrate(&models.ApiKey{})
 	db.AutoMigrate(&models.RequstLog{})
 
-	var user models.User
-	db.Preload("RequstLog").Take(&user, 1)
-
-	fmt.Println(user)
-
-	/*
-			db.Create(&models.RequstLog{
-			UserID: 1,
-			Method: "GET",
-			Path:   "/api/v1/users",
-		})
-		----
-				db.Create(&models.User{
-					UserName:     "teo",
-					Email:        "teo_sca@byschii.com",
-					PasswordHash: "123456",
-					ApiKey: models.ApiKey{
-						Key:       "123456789",
-						CodeReset: "siohb",
-						Resetting: false,
-					},
-				})
-			----
-				var k models.ApiKey
-				db.Take(&k)
-
-				fmt.Println(k)
-
-	*/
+	// server.Run(":8080")
 
 }
